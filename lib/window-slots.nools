@@ -1,0 +1,60 @@
+
+define WindowSlot {
+  actions: null,
+  slot_id: -1,
+  content: null,
+  slot_element:null
+}
+
+define Action {
+  sub_type: '',
+  slot_id: -1,
+  content: null
+}
+
+rule "Load into empty slot" {
+  when {
+    a : Action a.sub_type === "load";
+    ws : WindowSlot ws.content === null && a.slot_id === ws.slot_id;
+  } then {
+    modify(ws, function(){
+      ws.content = a.content;
+    });
+    retract(a);
+    ws.actions.load().then(function(){
+      next();
+    }).catch(function(){
+      next();
+    });
+  }
+}
+
+rule "Unload slot" {
+  when {
+    a : Action a.sub_type === "unload";
+    ws : WindowSlot a.slot_id === ws.slot_id;
+  } then {
+    ws.actions.unload().then(function(){
+      modify(ws, function(){
+        ws.content = null;
+      });
+      retract(a);
+      next();
+    }).catch(function(){
+      modify(ws, function(){
+        ws.content = null;
+      });
+      retract(a);
+      next();
+    });
+  }
+}
+
+rule "Load into occupied slot" {
+  when {
+    a : Action a.sub_type === "load";
+    ws : WindowSlot ws.content !== null && a.slot_id === ws.slot_id;
+  } then {
+    assert(new Action({slot_id:ws.slot_id, sub_type:"unload"}));
+  }
+}
