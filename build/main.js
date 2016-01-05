@@ -45,18 +45,21 @@
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var windowFrame = __webpack_require__(1)();
-	var windowFrameEditor = __webpack_require__(77);
-	var $ = __webpack_require__(80);
-	var counter = __webpack_require__(81);
 
-	$(document).ready(function(){
-	  var contents = contents || {};
-	  var dataSources = dataSources || {};
-	  windowFrameEditor($("body"), windowFrame, contents, dataSources);
-	  contents["hello-world"] = __webpack_require__(82);
-	  dataSources["counter"] = counter;
-	});
+	module.exports = function(rootElement, initContentTypes){
+	  var windowFrame = __webpack_require__(1)();
+	  var windowFrameEditor = __webpack_require__(77);
+	  var ContentType = __webpack_require__(81);
+	  var createSimpleDataView = __webpack_require__(82);
+	  var HttpRequest = __webpack_require__(83);
+	  var contents = new ContentType(initContentTypes);
+	  var dataSources = {};
+	  dataSources.contentTypes = contents;
+	  var funcs = windowFrameEditor(rootElement, windowFrame, dataSources);
+	  funcs.HttpRequest = HttpRequest;
+	  funcs.createSimpleDataView = createSimpleDataView;
+	  return funcs;
+	}
 
 
 /***/ },
@@ -16230,7 +16233,7 @@
 	var uuid = __webpack_require__(78);
 	var $ = __webpack_require__(80);
 
-	module.exports = function(root, windowFrame, contentTypes, dataSources){
+	module.exports = function(root, windowFrame, dataSources){
 	  var WindowSlot = windowFrame.WindowSlot;
 	  var Action = windowFrame.Action;
 	  var session = windowFrame.session;
@@ -16244,26 +16247,61 @@
 	    ws.actions.load = function(){
 	      return new Promise((res, rej) => {
 	        if(this.content !== null){
-	          this.content = this.content.load(this, dataSources);
-	          $("#" + elementId).append(this.content.render());
+	          Promise.resolve().then(() => {
+	            return this.content.load(this.actions.rerender, dataSources);
+	          })
+	          .then((initialized) => {
+	            this.content = initialized;
+	            return this.content.render();
+	          })
+	          .then((rendered) => {
+	            $("#" + elementId).append(rendered);
+	            res();
+	          })
+	          .catch((err) => {
+	            rej(err);
+	          });
+	        } else {
+	          res();
 	        }
-	        res();
 	      });
 	    }.bind(ws);
 	    ws.actions.unload = function(){
 	      return new Promise((res, rej) => {
-	        this.content.unload();
-	        $("#" + elementId).empty();
-	        res();
+	        if(this.content){
+	          Promise.resolve()
+	          .then(() => {
+	            return this.content.unload();
+	          })
+	          .then(() => {
+	            $("#" + elementId).empty();
+	            res();
+	          })
+	          .catch((err) => {
+	            rej(err);
+	          });
+	        } else {
+	          res();
+	        }
 	      });
 	    }.bind(ws);
 	    ws.actions.rerender = function(){
 	      return new Promise((res, rej) => {
 	        if(this.content !== null){
 	          $("#" + elementId).empty();
-	          $("#" + elementId).append(this.content.render());
+	          Promise.resolve().then(() => {
+	            return this.content.render();
+	          })
+	          .then((rendered) => {
+	            $("#" + elementId).append(rendered);
+	            res();
+	          })
+	          .catch((err) => {
+	            rej(err);
+	          });
+	        } else {
+	          res();
 	        }
-	        res();
 	      });
 	    }.bind(ws);
 	    element.appendTo(root);
@@ -16272,15 +16310,16 @@
 	  }
 
 	  function loadContent(contentKey, slot_id){
-	    var contentFactory = contentTypes[contentKey] || null;
+	    var contentFactory = dataSources.contentTypes.get(contentKey) || null;
 	    session.assert(new Action({slot_id:slot_id, content:contentFactory, sub_type:"load"}))
 	    session.match();
 	  }
 
-	  createWindowSlot();
-
 	  var editor = {
-	    load:function(){
+	    load:function(rerender, dataSources){
+	      dataSources.contentTypes.on("change", function(){
+	        rerender();
+	      });
 	      return {
 	        render: function(){
 	          var ele = $("<span></span>");
@@ -16293,7 +16332,13 @@
 	          ele.append(slotIdField);
 	          ele.append("Content: ");
 	          var fieldContent = uuid.v4();
-	          var contentField = $('<input id="' + fieldContent + '" type="text"></input>');
+	          var contentField = $('<select id="' + fieldContent + '"></select>');
+	          dataSources.contentTypes.keys().map((key) => {
+	            contentField
+	              .append($("<option></option>")
+	              .attr("value",key)
+	              .text(key));
+	            });
 	          ele.append(contentField);
 	          var loadSlot = $('<input type="button" value="Load Slot"></input>');
 	          loadSlot.click(function(){
@@ -16313,8 +16358,8 @@
 	    }
 	  }
 
-	  contentTypes["window-frame-editor"] = editor;
-	  loadContent("window-frame-editor", slot_num);
+	  dataSources.contentTypes.set("window-frame-editor", editor);
+	  return {loadContent:loadContent, createWindowSlot: createWindowSlot};
 	}
 
 
@@ -25765,18 +25810,39 @@
 /* 81 */
 /***/ function(module, exports, __webpack_require__) {
 
-	
+	"use strict"
+
 	var EE = __webpack_require__(72).EventEmitter;
 
-	var counter = new EE();
-	var count = 0;
+	class ContentType extends EE{
+	  constructor (initTypes){
+	    super();
+	    this.types = initTypes || {};
+	    this.on("get", (correlationId, key) => {
+	      this.emit(correlationId, this.types[key]);
+	    });
+	  }
 
-	setInterval(function(){
-	  counter.emit("count", count);
-	  count++;
-	}, 1000);
+	  get(key){
+	    return this.types[key];
+	  }
 
-	module.exports = counter;
+	  set(key, value){
+	    this.types[key] = value;
+	    this.emit("change");
+	  }
+
+	  keys(){
+	    var keys = [];
+	    for(var i in this.types){
+	      keys.push(i);
+	    }
+	    return keys;
+	  }
+
+	}
+
+	module.exports = ContentType;
 
 
 /***/ },
@@ -25785,27 +25851,61 @@
 
 	var $ = __webpack_require__(80);
 
-	module.exports = {
-	  load : function(windowSlot, dataSources){
-	    var lastVal = 0;
-	    function rerender(){
-	      windowSlot.actions.rerender();
+	module.exports = function(key, event, dataSources){
+
+	  var contentFactory = {
+	    load : function(rerender){
+	      var value = null;
+	      var handler = function(val){
+	        value = val;
+	        rerender();
+	      };
+	      dataSources[key].on(event, handler);
+
+	      return {
+	        render : function(){
+	          return $("<span></span>").append($("<h3>" + key + ":" + event + "</h3>")).append($("<p>" + JSON.stringify(value, null, 2) + "</p>"));
+	        }, unload: function(){
+	          dataSources[key].removeListener(event, handler);
+	        }
+	      };
 	    }
-	    dataSources.counter.on("count",function(val){
-	      lastVal = val;
-	      rerender();
-	    });
+	  };
 
-
-	    return {
-	      render : function(){
-	        return $("<p>Hello World " + lastVal + "</p>");
-	      }, unload: function(){
-
-	      }
-	    }
-	  }
+	  dataSources.contentTypes.set("simple-view-" + key, contentFactory);
 	}
+
+
+/***/ },
+/* 83 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict"
+
+	var EE = __webpack_require__(72).EventEmitter;
+	var $ = __webpack_require__(80);
+	class HttpRequest extends EE{
+	  constructor (jqReqObj, interval){
+	    super();
+	    this.data = null;
+	    this.on("get", (correlationId) => {
+	      this.emit(correlationId, this.data);
+	    });
+	    setInterval(() => {
+	      $.ajax(jqReqObj).success((data) => {
+	        this.data = data;
+	        this.emit("data", this.data);
+	      });
+	    }, interval || 5000);
+	  }
+
+	  get(){
+	    return this.data;
+	  }
+
+	}
+
+	module.exports = HttpRequest;
 
 
 /***/ }

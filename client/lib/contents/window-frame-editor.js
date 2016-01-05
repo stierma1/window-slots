@@ -2,7 +2,7 @@
 var uuid = require("uuid");
 var $ = require("jquery");
 
-module.exports = function(root, windowFrame, contentTypes, dataSources){
+module.exports = function(root, windowFrame, dataSources){
   var WindowSlot = windowFrame.WindowSlot;
   var Action = windowFrame.Action;
   var session = windowFrame.session;
@@ -16,26 +16,61 @@ module.exports = function(root, windowFrame, contentTypes, dataSources){
     ws.actions.load = function(){
       return new Promise((res, rej) => {
         if(this.content !== null){
-          this.content = this.content.load(this, dataSources);
-          $("#" + elementId).append(this.content.render());
+          Promise.resolve().then(() => {
+            return this.content.load(this.actions.rerender, dataSources);
+          })
+          .then((initialized) => {
+            this.content = initialized;
+            return this.content.render();
+          })
+          .then((rendered) => {
+            $("#" + elementId).append(rendered);
+            res();
+          })
+          .catch((err) => {
+            rej(err);
+          });
+        } else {
+          res();
         }
-        res();
       });
     }.bind(ws);
     ws.actions.unload = function(){
       return new Promise((res, rej) => {
-        this.content.unload();
-        $("#" + elementId).empty();
-        res();
+        if(this.content){
+          Promise.resolve()
+          .then(() => {
+            return this.content.unload();
+          })
+          .then(() => {
+            $("#" + elementId).empty();
+            res();
+          })
+          .catch((err) => {
+            rej(err);
+          });
+        } else {
+          res();
+        }
       });
     }.bind(ws);
     ws.actions.rerender = function(){
       return new Promise((res, rej) => {
         if(this.content !== null){
           $("#" + elementId).empty();
-          $("#" + elementId).append(this.content.render());
+          Promise.resolve().then(() => {
+            return this.content.render();
+          })
+          .then((rendered) => {
+            $("#" + elementId).append(rendered);
+            res();
+          })
+          .catch((err) => {
+            rej(err);
+          });
+        } else {
+          res();
         }
-        res();
       });
     }.bind(ws);
     element.appendTo(root);
@@ -44,15 +79,16 @@ module.exports = function(root, windowFrame, contentTypes, dataSources){
   }
 
   function loadContent(contentKey, slot_id){
-    var contentFactory = contentTypes[contentKey] || null;
+    var contentFactory = dataSources.contentTypes.get(contentKey) || null;
     session.assert(new Action({slot_id:slot_id, content:contentFactory, sub_type:"load"}))
     session.match();
   }
 
-  createWindowSlot();
-
   var editor = {
-    load:function(){
+    load:function(rerender, dataSources){
+      dataSources.contentTypes.on("change", function(){
+        rerender();
+      });
       return {
         render: function(){
           var ele = $("<span></span>");
@@ -65,7 +101,13 @@ module.exports = function(root, windowFrame, contentTypes, dataSources){
           ele.append(slotIdField);
           ele.append("Content: ");
           var fieldContent = uuid.v4();
-          var contentField = $('<input id="' + fieldContent + '" type="text"></input>');
+          var contentField = $('<select id="' + fieldContent + '"></select>');
+          dataSources.contentTypes.keys().map((key) => {
+            contentField
+              .append($("<option></option>")
+              .attr("value",key)
+              .text(key));
+            });
           ele.append(contentField);
           var loadSlot = $('<input type="button" value="Load Slot"></input>');
           loadSlot.click(function(){
@@ -85,6 +127,6 @@ module.exports = function(root, windowFrame, contentTypes, dataSources){
     }
   }
 
-  contentTypes["window-frame-editor"] = editor;
-  loadContent("window-frame-editor", slot_num);
+  dataSources.contentTypes.set("window-frame-editor", editor);
+  return {loadContent:loadContent, createWindowSlot: createWindowSlot};
 }
