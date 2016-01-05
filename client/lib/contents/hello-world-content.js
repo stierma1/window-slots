@@ -7,14 +7,14 @@ module.exports = {
       lastVal = val;
       rerender();
     };
-    dataSources.counter.on("count",handler);
+    dataSources.get("counter").on("count",handler);
 
     return {
       render : function(){
         return $("<p>Hello World " + lastVal + "</p>");
       }, unload: function(){
-        dataSources.counter.removeListener("count", handler);
+        dataSources.get("counter").removeListener("count", handler);
       }
-    }
+    };
   }
 }

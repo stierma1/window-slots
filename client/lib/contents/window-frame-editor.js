@@ -79,14 +79,14 @@ module.exports = function(root, windowFrame, dataSources){
   }
 
   function loadContent(contentKey, slot_id){
-    var contentFactory = dataSources.contentTypes.get(contentKey) || null;
+    var contentFactory = dataSources.get("contentTypes").get(contentKey) || null;
     session.assert(new Action({slot_id:slot_id, content:contentFactory, sub_type:"load"}))
     session.match();
   }
 
   var editor = {
     load:function(rerender, dataSources){
-      dataSources.contentTypes.on("change", function(){
+      dataSources.get("contentTypes").on("change", function(){
         rerender();
       });
       return {
@@ -102,7 +102,7 @@ module.exports = function(root, windowFrame, dataSources){
           ele.append("Content: ");
           var fieldContent = uuid.v4();
           var contentField = $('<select id="' + fieldContent + '"></select>');
-          dataSources.contentTypes.keys().map((key) => {
+          dataSources.get("contentTypes").keys().map((key) => {
             contentField
               .append($("<option></option>")
               .attr("value",key)
@@ -127,6 +127,6 @@ module.exports = function(root, windowFrame, dataSources){
     }
   }
 
-  dataSources.contentTypes.set("window-frame-editor", editor);
+  dataSources.get("contentTypes").set("window-frame-editor", editor);
   return {loadContent:loadContent, createWindowSlot: createWindowSlot};
 }

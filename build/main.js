@@ -46,18 +46,20 @@
 
 	
 
-	module.exports = function(rootElement, initContentTypes){
+	module.exports = function(rootElement, initContentTypes, initDataSources){
 	  var windowFrame = __webpack_require__(1)();
 	  var windowFrameEditor = __webpack_require__(77);
 	  var ContentType = __webpack_require__(81);
 	  var createSimpleDataView = __webpack_require__(82);
 	  var HttpRequest = __webpack_require__(83);
+	  var DataSources = __webpack_require__(84);
 	  var contents = new ContentType(initContentTypes);
-	  var dataSources = {};
-	  dataSources.contentTypes = contents;
+	  var dataSources = new DataSources(initDataSources);
+	  dataSources.set("contentTypes", contents);
 	  var funcs = windowFrameEditor(rootElement, windowFrame, dataSources);
 	  funcs.HttpRequest = HttpRequest;
 	  funcs.createSimpleDataView = createSimpleDataView;
+	  funcs.dataSources = dataSources;
 	  return funcs;
 	}
 
@@ -16310,14 +16312,14 @@
 	  }
 
 	  function loadContent(contentKey, slot_id){
-	    var contentFactory = dataSources.contentTypes.get(contentKey) || null;
+	    var contentFactory = dataSources.get("contentTypes").get(contentKey) || null;
 	    session.assert(new Action({slot_id:slot_id, content:contentFactory, sub_type:"load"}))
 	    session.match();
 	  }
 
 	  var editor = {
 	    load:function(rerender, dataSources){
-	      dataSources.contentTypes.on("change", function(){
+	      dataSources.get("contentTypes").on("change", function(){
 	        rerender();
 	      });
 	      return {
@@ -16333,7 +16335,7 @@
 	          ele.append("Content: ");
 	          var fieldContent = uuid.v4();
 	          var contentField = $('<select id="' + fieldContent + '"></select>');
-	          dataSources.contentTypes.keys().map((key) => {
+	          dataSources.get("contentTypes").keys().map((key) => {
 	            contentField
 	              .append($("<option></option>")
 	              .attr("value",key)
@@ -16358,7 +16360,7 @@
 	    }
 	  }
 
-	  dataSources.contentTypes.set("window-frame-editor", editor);
+	  dataSources.get("contentTypes").set("window-frame-editor", editor);
 	  return {loadContent:loadContent, createWindowSlot: createWindowSlot};
 	}
 
@@ -25858,21 +25860,25 @@
 	      var value = null;
 	      var handler = function(val){
 	        value = val;
-	        rerender();
+	        setTimeout(function(){rerender();},0);
 	      };
-	      dataSources[key].on(event, handler);
+
+	      dataSources.get(key).on(event, handler);
+	      dataSources.get(key).once("subscribed", handler);
+	      dataSources.get(key).emit("subscribe");
 
 	      return {
 	        render : function(){
 	          return $("<span></span>").append($("<h3>" + key + ":" + event + "</h3>")).append($("<p>" + JSON.stringify(value, null, 2) + "</p>"));
 	        }, unload: function(){
-	          dataSources[key].removeListener(event, handler);
+	          dataSources.get(key).removeListener(event, handler);
+	          dataSources.get(key).removeListener("subscribed", handler);
 	        }
 	      };
 	    }
 	  };
 
-	  dataSources.contentTypes.set("simple-view-" + key, contentFactory);
+	  dataSources.get("contentTypes").set("simple-view-" + key, contentFactory);
 	}
 
 
@@ -25906,6 +25912,52 @@
 	}
 
 	module.exports = HttpRequest;
+
+
+/***/ },
+/* 84 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict"
+
+	var EE = __webpack_require__(72).EventEmitter;
+
+	class DataSources extends EE{
+	  constructor (initDataSources){
+	    super();
+	    if(initDataSources){
+	      return initDataSources;
+	    }
+	    this.dataSources = {};
+	    this.on("get", (correlationId, key) => {
+	      this.emit(correlationId, this.dataSources[key]);
+	    });
+	    this.on("subscribe", () => {
+	      this.emit("subscribed", this.dataSources);
+	    });
+	    this.set("dataSources", this);
+	  }
+
+	  get(key){
+	    return this.dataSources[key];
+	  }
+
+	  set(key, value){
+	    this.dataSources[key] = value;
+	    this.emit("change", this.dataSources);
+	  }
+
+	  keys(){
+	    var keys = [];
+	    for(var i in this.dataSources){
+	      keys.push(i);
+	    }
+	    return keys;
+	  }
+
+	}
+
+	module.exports = DataSources;
 
 
 /***/ }
