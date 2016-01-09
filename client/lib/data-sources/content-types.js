@@ -2,12 +2,16 @@
 
 var EE = require("events").EventEmitter;
 
-class ContentType extends EE{
+class ContentTypes extends EE{
   constructor (initTypes){
     super();
     this.types = initTypes || {};
     this.on("get", (correlationId, key) => {
       this.emit(correlationId, this.types[key]);
+    });
+
+    this.on("subscribe", () => {
+      this.emit("subscribed", this.types);
     });
   }
 
@@ -17,7 +21,7 @@ class ContentType extends EE{
 
   set(key, value){
     this.types[key] = value;
-    this.emit("change");
+    this.emit("change", this.types);
   }
 
   keys(){
@@ -30,4 +34,4 @@ class ContentType extends EE{
 
 }
 
-module.exports = ContentType;
+module.exports = ContentTypes;

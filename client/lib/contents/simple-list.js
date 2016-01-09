@@ -7,18 +7,14 @@ module.exports = function(key, dataSources){
       var value = null;
       var suppressRerender = false;
       var handler = function(val){
-        value = val;
+        value = dataSources.get(key).keys();
         if(!suppressRerender){
           setTimeout(function(){rerender();},0);
         }
       };
-
-      var subject = dataSources.get(key);
-      var subscription = subject.subscribe(function(data){
-        handler(data);
-      }, function(err){
-        handler(err);
-      });
+      dataSources.get(key).on("change", handler);
+      dataSources.get(key).once("subscribed", handler);
+      dataSources.get(key).emit("subscribe");
 
       return {
         render : function(){
@@ -31,5 +27,5 @@ module.exports = function(key, dataSources){
     }
   };
 
-  dataSources.get("contentTypes").set("simple-view-" + key, contentFactory);
+  dataSources.get("contentTypes").set("simple-list-" + key, contentFactory);
 }

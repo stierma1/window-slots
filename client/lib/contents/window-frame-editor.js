@@ -84,6 +84,11 @@ module.exports = function(root, windowFrame, dataSources){
     session.match();
   }
 
+  function unloadContent(slot_id){
+    session.assert(new Action({slot_id:slot_id, sub_type:"unload"}))
+    session.match();
+  }
+
   var editor = {
     load:function(rerender, dataSources){
       dataSources.get("contentTypes").on("change", function(){
@@ -128,5 +133,5 @@ module.exports = function(root, windowFrame, dataSources){
   }
 
   dataSources.get("contentTypes").set("window-frame-editor", editor);
-  return {loadContent:loadContent, createWindowSlot: createWindowSlot};
+  return {loadContent:loadContent, createWindowSlot: createWindowSlot, unloadContent:unloadContent};
 }

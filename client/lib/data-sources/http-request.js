@@ -1,26 +1,21 @@
 "use strict"
 
-var EE = require("events").EventEmitter;
 var $ = require("jquery");
-class HttpRequest extends EE{
-  constructor (jqReqObj, interval){
-    super();
-    this.data = null;
-    this.on("get", (correlationId) => {
-      this.emit(correlationId, this.data);
+var RX = require("rx");
+
+module.exports = function(jqReqObj, interval){
+  var interval = RX.Observable.interval(interval || 5000);
+  var subject = new RX.BehaviorSubject(1);
+
+  return RX.Observable.merge(subject, interval)
+  .map(function(){
+    return RX.Observable.fromPromise($.ajax(jqReqObj).promise());
+  })
+  .flatMap(function(obs){
+    return obs.catch(function(error){
+      return Rx.Observable.return(error);
     });
-    setInterval(() => {
-      $.ajax(jqReqObj).success((data) => {
-        this.data = data;
-        this.emit("data", this.data);
-      });
-    }, interval || 5000);
-  }
-
-  get(){
-    return this.data;
-  }
-
-}
-
-module.exports = HttpRequest;
+  })
+  .publish()
+  .refCount();
+};
