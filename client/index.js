@@ -18,21 +18,11 @@ module.exports = function(rootElement, initContentTypes, initDataSources){
   simpleList("dataSources", dataSources);
   simpleList("contentTypes", dataSources);
   simpleViewConnector(dataSources);
-  
+
   funcs.createHttpRequest = createHttpRequest;
   funcs.createSimpleDataView = createSimpleDataView;
   funcs.dataSources = dataSources;
-  funcs.createHttpRequestWithSimpleView = function(key, jsReqObj, interval){
-    dataSources.set(key, createHttpRequest(jsReqObj, interval));
-    createSimpleDataView(key, dataSources)
-  }
+
   dataSources.get("contentTypes").set("http-request-generator", httpRequestGenerator());
   return funcs;
 }
-
-$(document).ready(function(){
-  var funcs = module.exports($("body"));
-
-  funcs.createWindowSlot();
-  funcs.loadContent("window-frame-editor", 1);
-});
