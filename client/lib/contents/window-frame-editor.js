@@ -54,15 +54,19 @@ module.exports = function(root, windowFrame, dataSources){
         }
       });
     }.bind(ws);
-    ws.actions.rerender = function(){
+    ws.actions.rerender = function(dontEmpty){
       return new Promise((res, rej) => {
         if(this.content !== null){
-          $("#" + elementId).empty();
+          if(!dontEmpty){
+            $("#" + elementId).empty();
+          }
           Promise.resolve().then(() => {
-            return this.content.render();
+            return this.content.render(dontEmpty);
           })
           .then((rendered) => {
-            $("#" + elementId).append(rendered);
+            if(!dontEmpty){
+              $("#" + elementId).append(rendered);
+            }
             res();
           })
           .catch((err) => {
