@@ -26,6 +26,7 @@
     "istanbul": "^0.4.1",
     "jquery": "^2.1.4",
     "jshint": "^2.8.0",
+    "jsonpath-plus": "^0.14.0",
     "mocha": "^2.3.4",
     "nools": "^0.4.1",
     "rx": "^4.0.7",

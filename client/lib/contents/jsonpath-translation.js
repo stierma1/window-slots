@@ -1,5 +1,4 @@
 var $ = require("jquery");
-var createSimpleDataView = require("./simple-data-view");
 
 module.exports = function(dataSources){
 
@@ -7,6 +6,8 @@ module.exports = function(dataSources){
     load : function(rerender){
       var value = [];
       var suppressRerender = false;
+      var jsonpath = dataSources.get("translations").get("jsonpath");
+
       var handler = function(val){
         value = dataSources.keys().filter(function(val){
           return val !== "contentTypes" && val !== "dataSources" && val !== "translations";
@@ -15,6 +16,7 @@ module.exports = function(dataSources){
           setTimeout(function(){rerender();},0);
         }
       };
+
       dataSources.on("change", handler);
       dataSources.once("subscribed", handler);
       dataSources.emit("subscribe");
@@ -30,17 +32,24 @@ module.exports = function(dataSources){
               .text(key));
           });
 
+          var pathField = $("<textarea></textarea>");
+          var renameField = $("<input type='text'></input>")
+
           var createButton = $("<input type='button' value='Create'></input>")
             .click(function(){
               var source = sourceSelect.val();
+              var path = pathField.val();
+              var name = renameField.val();
 
-              if(source){
-                createSimpleDataView(source, dataSources);
+              if(source && path){
+                jsonpath(source, path, dataSources, name);
               }
             });
 
           return $("<span></span>")
             .append($("<div></div>").append($("<span>Source: </span>")).append(sourceSelect))
+            .append($("<div></div>").append($("<span>Path: </span>")).append(pathField))
+            .append($("<div></div>").append($("<span>Name: </span>")).append(renameField))
             .append(createButton);
 
         }, unload: function(){
@@ -51,5 +60,5 @@ module.exports = function(dataSources){
     }
   };
 
-  dataSources.get("contentTypes").set("simple-view-connector", contentFactory);
+  dataSources.get("contentTypes").set("jsonpath-translation", contentFactory);
 }
