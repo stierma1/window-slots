@@ -19,9 +19,11 @@ module.exports = function(rootElement, initContentTypes, initDataSources, initTr
   dataSources.get("translations").set("jsonpath", require("./lib/translations/jsonpath"));
   dataSources.get("translations").set("index", require("./lib/translations/index"));
   dataSources.get("translations").set("zip", require("./lib/translations/zip"));
+  dataSources.get("translations").set("flatten", require("./lib/translations/flatten"));
   require("./lib/contents/jsonpath-translation")(dataSources);
   require("./lib/contents/index-translation")(dataSources);
   require("./lib/contents/zip-translation")(dataSources);
+  require("./lib/contents/flatten-translation")(dataSources);
 
   var funcs = windowFrameEditor(rootElement, windowFrame, dataSources);
 
@@ -36,9 +38,3 @@ module.exports = function(rootElement, initContentTypes, initDataSources, initTr
   dataSources.get("contentTypes").set("http-request-generator", httpRequestGenerator());
   return funcs;
 }
-
-$(document).ready(function(){
-  var funcs = module.exports($("body"));
-  funcs.createWindowSlot();
-  funcs.loadContent("window-frame-editor", 1);
-});
