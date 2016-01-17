@@ -1,4 +1,5 @@
 var $ = require("jquery");
+var utils = require("../utils");
 
 module.exports = function(dataSources){
 
@@ -10,7 +11,7 @@ module.exports = function(dataSources){
 
       var handler = function(val){
         value = dataSources.keys().filter(function(val){
-          return val !== "contentTypes" && val !== "dataSources" && val !== "translations";
+          return !utils.isCoreDataSource(val);
         });
         if(!suppressRerender){
           setTimeout(function(){rerender();},0);

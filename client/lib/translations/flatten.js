@@ -21,6 +21,10 @@ module.exports = function(key, dataSources, rename){
     .catch(function(error){
       return error;
     });
-
+    dataSources.get("creationMap").set(newName, key, [key], "flatten");
     dataSources.set(newName, newSource);
+}
+
+module.exports.initialize = function(dataSources){
+  dataSources.get("translations").set("flatten", module.exports);
 }

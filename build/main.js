@@ -46,30 +46,39 @@
 
 	var $ = __webpack_require__(1);
 
-	module.exports = function(rootElement, initContentTypes, initDataSources, initTranslations){
+	module.exports = function(rootElement, initContentTypes, initDataSources, initTranslations, initCreationMap, initDataSourceTypes){
 	  var windowFrame = __webpack_require__(2)();
 	  var windowFrameEditor = __webpack_require__(78);
 	  var ContentTypes = __webpack_require__(81);
 	  var Translations = __webpack_require__(82);
-	  var createSimpleDataView = __webpack_require__(83);
-	  var createHttpRequest = __webpack_require__(84);
-	  var DataSources = __webpack_require__(86);
-	  var httpRequestGenerator = __webpack_require__(87);
-	  var simpleList = __webpack_require__(88);
-	  var simpleViewConnector = __webpack_require__(89);
+	  var DataSourceTypes = __webpack_require__(83);
+	  var CreationMap = __webpack_require__(84)
+	  var createSimpleDataView = __webpack_require__(85);
+	  var createHttpRequest = __webpack_require__(86);
+	  var DataSources = __webpack_require__(88);
+	  var httpRequestGenerator = __webpack_require__(89);
+	  var simpleList = __webpack_require__(90);
+	  var simpleViewConnector = __webpack_require__(91);
 	  var contents = new ContentTypes(initContentTypes);
 	  var dataSources = new DataSources(initDataSources);
 	  var translations = new Translations(initTranslations);
+	  var createMap = new CreationMap(initCreationMap);
+	  var dataSourceTypes = new DataSourceTypes(initDataSourceTypes);
+
+	  dataSourceTypes.set("http-request", __webpack_require__(86));
+	  dataSources.set("creationMap", createMap);
+	  dataSources.set("dataSourceTypes", dataSourceTypes);
 	  dataSources.set("contentTypes", contents);
 	  dataSources.set("translations", translations);
-	  dataSources.get("translations").set("jsonpath", __webpack_require__(90));
-	  dataSources.get("translations").set("index", __webpack_require__(94));
-	  dataSources.get("translations").set("zip", __webpack_require__(95));
-	  dataSources.get("translations").set("flatten", __webpack_require__(96));
-	  __webpack_require__(97)(dataSources);
-	  __webpack_require__(98)(dataSources);
-	  __webpack_require__(99)(dataSources);
+
+	  __webpack_require__(93).initialize(dataSources);
+	  __webpack_require__(97).initialize(dataSources);
+	  __webpack_require__(98).initialize(dataSources);
+	  __webpack_require__(99).initialize(dataSources);
 	  __webpack_require__(100)(dataSources);
+	  __webpack_require__(101)(dataSources);
+	  __webpack_require__(102)(dataSources);
+	  __webpack_require__(103)(dataSources);
 
 	  var funcs = windowFrameEditor(rootElement, windowFrame, dataSources);
 
@@ -80,10 +89,23 @@
 	  funcs.createHttpRequest = createHttpRequest;
 	  funcs.createSimpleDataView = createSimpleDataView;
 	  funcs.dataSources = dataSources;
-
+	  funcs.buildCreationPath = __webpack_require__(104);
+	  __webpack_require__(105)(dataSources);
 	  dataSources.get("contentTypes").set("http-request-generator", httpRequestGenerator());
+	  funcs.utils = __webpack_require__(92);
 	  return funcs;
 	}
+
+	$(function(){
+	  var funcs = module.exports($("body"));
+	  funcs.createWindowSlot();
+	  funcs.loadContent("window-frame-editor", 1);
+
+	  var t = '[{"key":"b","from":"t-zip-t","args":["t-zip-t",0],"type":"index"},{"key":"t-zip-t","from":["t","t"],"args":["t","t"],"type":"zip"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"}]'
+	  var s = JSON.parse(t);
+
+	  funcs.buildCreationPath(s, funcs.dataSources)
+	})
 
 
 /***/ },
@@ -25929,6 +25951,115 @@
 /* 83 */
 /***/ function(module, exports, __webpack_require__) {
 
+	"use strict"
+
+	var EE = __webpack_require__(73).EventEmitter;
+
+	class DataSourceTypes extends EE{
+	  constructor (initDataSources){
+	    super();
+	    if(initDataSources){
+	      return initDataSources;
+	    }
+	    this.dataSources = {};
+	    this.on("get", (correlationId, key) => {
+	      this.emit(correlationId, this.dataSources[key]);
+	    });
+	    this.on("subscribe", () => {
+	      this.emit("subscribed", this.dataSources);
+	    });
+	    this.set("dataSources", this);
+	  }
+
+	  get(key){
+	    return this.dataSources[key];
+	  }
+
+	  set(key, value){
+	    this.dataSources[key] = value;
+	    this.emit("change", this.dataSources);
+	  }
+
+	  keys(){
+	    var keys = [];
+	    for(var i in this.dataSources){
+	      keys.push(i);
+	    }
+	    return keys;
+	  }
+
+	}
+
+	module.exports = DataSourceTypes;
+
+
+/***/ },
+/* 84 */
+/***/ function(module, exports, __webpack_require__) {
+
+	"use strict"
+
+	var EE = __webpack_require__(73).EventEmitter;
+
+	class CreationMap extends EE{
+	  constructor (initMaps){
+	    super();
+	    this.cMaps = initMaps || {};
+	    this.on("get", (correlationId, key) => {
+	      this.emit(correlationId, this.cMaps[key]);
+	    });
+
+	    this.on("subscribe", () => {
+	      this.emit("subscribed", this.cMaps);
+	    });
+	  }
+
+	  get(key){
+	    return this.cMaps[key];
+	  }
+
+	  set(key, _from, args, type){
+	    this.cMaps[key] = {key:key, from:_from, args:args, type:type};
+	    this.emit("change", this.cMaps);
+	  }
+
+	  keys(){
+	    var keys = [];
+	    for(var i in this.cMaps){
+	      keys.push(i);
+	    }
+	    return keys;
+	  }
+
+	  creationPath(key, path){
+	    var path = path || [];
+	    var self = this;
+	    var currentCreation = this.cMaps[key];
+
+	    if(key && this.cMaps[key]){
+	      path.push(this.cMaps[key]);
+	      if(this.cMaps[key].from instanceof Array){
+	        this.cMaps[key].from.map(function(val){
+	          self.creationPath(val, path);
+	        });
+	        return path;
+	      } else {
+	        return this.creationPath(this.cMaps[key].from, path)
+	      }
+	    } else {
+	      return path;
+	    }
+	  }
+
+	}
+
+	module.exports = CreationMap;
+
+
+/***/ },
+/* 85 */
+/***/ function(module, exports, __webpack_require__) {
+
 	var $ = __webpack_require__(1);
 
 	module.exports = function(key, dataSources){
@@ -25967,13 +26098,13 @@
 
 
 /***/ },
-/* 84 */
+/* 86 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict"
 
 	var $ = __webpack_require__(1);
-	var RX = __webpack_require__(85);
+	var RX = __webpack_require__(87);
 
 	module.exports = function(jqReqObj, interval){
 	  var interval = RX.Observable.interval(interval || 5000);
@@ -25994,7 +26125,7 @@
 
 
 /***/ },
-/* 85 */
+/* 87 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;/* WEBPACK VAR INJECTION */(function(module, global, process) {// Copyright (c) Microsoft, All rights reserved. See License.txt in the project root for license information.
@@ -38196,7 +38327,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(29)(module), (function() { return this; }()), __webpack_require__(24)))
 
 /***/ },
-/* 86 */
+/* 88 */
 /***/ function(module, exports, __webpack_require__) {
 
 	"use strict"
@@ -38242,11 +38373,11 @@
 
 
 /***/ },
-/* 87 */
+/* 89 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
-	var createHttpRequest = __webpack_require__(84);
+	var createHttpRequest = __webpack_require__(86);
 	var uuid = __webpack_require__(79);
 
 	module.exports = function(){
@@ -38285,7 +38416,7 @@
 	                headers:headers || undefined,
 	                body: body || undefined
 	              };
-
+	              dataSources.get("creationMap").set(name, null, [jqObj, interval], "http-request");
 	              dataSources.set(name, createHttpRequest(jqObj, interval));
 	              rerender();
 	            }
@@ -38310,7 +38441,7 @@
 
 
 /***/ },
-/* 88 */
+/* 90 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -38347,11 +38478,12 @@
 
 
 /***/ },
-/* 89 */
+/* 91 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
-	var createSimpleDataView = __webpack_require__(83);
+	var createSimpleDataView = __webpack_require__(85);
+	var utils = __webpack_require__(92);
 
 	module.exports = function(dataSources){
 
@@ -38361,7 +38493,7 @@
 	      var suppressRerender = false;
 	      var handler = function(val){
 	        value = dataSources.keys().filter(function(val){
-	          return val !== "contentTypes" && val !== "dataSources" && val !== "translations";
+	          return !utils.isCoreDataSource(val);
 	        });
 	        if(!suppressRerender){
 	          setTimeout(function(){rerender();},0);
@@ -38408,11 +38540,22 @@
 
 
 /***/ },
-/* 90 */
+/* 92 */
+/***/ function(module, exports) {
+
+	
+	module.exports.isCoreDataSource = function(key){
+	  return ["dataSources", "contentTypes", "creationMap", "translations", "dataSourceTypes"]
+	    .indexOf(key) !== -1;
+	}
+
+
+/***/ },
+/* 93 */
 /***/ function(module, exports, __webpack_require__) {
 
 	
-	var JSONPath = __webpack_require__(91);
+	var JSONPath = __webpack_require__(94);
 
 	module.exports = function(key, path, dataSources, rename){
 	    var dataSource = dataSources.get(key);
@@ -38424,13 +38567,17 @@
 	    .catch(function(error){
 	      return error;
 	    });
-
+	    dataSources.get("creationMap").set(newName, key, [key, path], "jsonpath");
 	    dataSources.set(newName, newSource);
+	}
+
+	module.exports.initialize = function(dataSources){
+	  dataSources.get("translations").set("jsonpath", module.exports);
 	}
 
 
 /***/ },
-/* 91 */
+/* 94 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;var require;/*global exports, require*/
@@ -38451,7 +38598,7 @@
 	var allowedResultTypes = ['value', 'path', 'pointer', 'parent', 'parentProperty', 'all'];
 
 	var vm = isNode
-	    ? __webpack_require__(92) : {
+	    ? __webpack_require__(95) : {
 	        runInNewContext: function (expr, context) {
 	            return eval(Object.keys(context).reduce(function (s, vr) {
 	                return 'var ' + vr + '=' + JSON.stringify(context[vr]).replace(/\u2028|\u2029/g, function (m) {
@@ -38895,10 +39042,10 @@
 
 
 /***/ },
-/* 92 */
+/* 95 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var indexOf = __webpack_require__(93);
+	var indexOf = __webpack_require__(96);
 
 	var Object_keys = function (obj) {
 	    if (Object.keys) return Object.keys(obj)
@@ -39039,7 +39186,7 @@
 
 
 /***/ },
-/* 93 */
+/* 96 */
 /***/ function(module, exports) {
 
 	
@@ -39054,7 +39201,7 @@
 	};
 
 /***/ },
-/* 94 */
+/* 97 */
 /***/ function(module, exports) {
 
 	
@@ -39069,16 +39216,20 @@
 	    .catch(function(error){
 	      return error;
 	    });
-
+	    dataSources.get("creationMap").set(newName, key, [key, num], "index");
 	    dataSources.set(newName, newSource);
+	}
+
+	module.exports.initialize = function(dataSources){
+	  dataSources.get("translations").set("index", module.exports);
 	}
 
 
 /***/ },
-/* 95 */
+/* 98 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var Rx = __webpack_require__(85);
+	var Rx = __webpack_require__(87);
 
 	module.exports = function(key1, key2, dataSources, rename){
 	    var dataSource1 = dataSources.get(key1);
@@ -39087,13 +39238,17 @@
 	    var newName = rename ? rename : key1 + "-zip-" + key2;
 
 	    var newSource = Rx.Observable.zip(dataSource1, dataSource2);
-
+	    dataSources.get("creationMap").set(newName, [key1, key2], [key1, key2], "zip");
 	    dataSources.set(newName, newSource);
+	}
+
+	module.exports.initialize = function(dataSources){
+	  dataSources.get("translations").set("zip", module.exports);
 	}
 
 
 /***/ },
-/* 96 */
+/* 99 */
 /***/ function(module, exports) {
 
 	
@@ -39119,16 +39274,21 @@
 	    .catch(function(error){
 	      return error;
 	    });
-
+	    dataSources.get("creationMap").set(newName, key, [key], "flatten");
 	    dataSources.set(newName, newSource);
+	}
+
+	module.exports.initialize = function(dataSources){
+	  dataSources.get("translations").set("flatten", module.exports);
 	}
 
 
 /***/ },
-/* 97 */
+/* 100 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
+	var utils = __webpack_require__(92);
 
 	module.exports = function(dataSources){
 
@@ -39140,7 +39300,7 @@
 
 	      var handler = function(val){
 	        value = dataSources.keys().filter(function(val){
-	          return val !== "contentTypes" && val !== "dataSources" && val !== "translations";
+	          return !utils.isCoreDataSource(val);
 	        });
 	        if(!suppressRerender){
 	          setTimeout(function(){rerender();},0);
@@ -39195,10 +39355,11 @@
 
 
 /***/ },
-/* 98 */
+/* 101 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
+	var utils = __webpack_require__(92);
 
 	module.exports = function(dataSources){
 
@@ -39210,7 +39371,7 @@
 
 	      var handler = function(val){
 	        value = dataSources.keys().filter(function(val){
-	          return val !== "contentTypes" && val !== "dataSources" && val !== "translations";
+	          return !utils.isCoreDataSource(val);
 	        });
 	        if(!suppressRerender){
 	          setTimeout(function(){rerender();},0);
@@ -39265,10 +39426,11 @@
 
 
 /***/ },
-/* 99 */
+/* 102 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
+	var utils = __webpack_require__(92);
 
 	module.exports = function(dataSources){
 
@@ -39280,7 +39442,7 @@
 
 	      var handler = function(val){
 	        value = dataSources.keys().filter(function(val){
-	          return val !== "contentTypes" && val !== "dataSources" && val !== "translations";
+	          return !utils.isCoreDataSource(val);
 	        });
 	        if(!suppressRerender){
 	          setTimeout(function(){rerender();},0);
@@ -39339,11 +39501,11 @@
 
 
 /***/ },
-/* 100 */
+/* 103 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
-
+	var utils = __webpack_require__(92)
 	module.exports = function(dataSources){
 
 	  var contentFactory = {
@@ -39354,7 +39516,7 @@
 
 	      var handler = function(val){
 	        value = dataSources.keys().filter(function(val){
-	          return val !== "contentTypes" && val !== "dataSources" && val !== "translations";
+	          return !utils.isCoreDataSource(val);
 	        });
 	        if(!suppressRerender){
 	          setTimeout(function(){rerender();},0);
@@ -39402,6 +39564,105 @@
 	  };
 
 	  dataSources.get("contentTypes").set("flatten-translation", contentFactory);
+	}
+
+
+/***/ },
+/* 104 */
+/***/ function(module, exports) {
+
+	module.exports = function(path, dataSources){
+
+	  for(var i = path.length - 1; i >= 0; i--){
+	    var node = path[i];
+	    var rename = node.key;
+
+	    if(dataSources.get(rename)){
+	      continue;
+	    }
+	    //if it has a from then it is a translation else its a data-source-type
+	    var func = null;
+
+	    if(node.from){
+	      func = dataSources.get("translations").get(node.type);
+	      func.apply(this, node.args.concat([dataSources, rename]));
+	    } else {
+	      func = dataSources.get("dataSourceTypes").get(node.type);
+	      dataSources.get("creationMap").set(rename, null, node.args, node.type);
+	      dataSources.set(rename, func.apply(this, node.args));
+	    }
+
+	  }
+
+	}
+
+
+/***/ },
+/* 105 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(1);
+	var utils = __webpack_require__(92);
+
+	module.exports = function(dataSources){
+
+	  var contentFactory = {
+	    load : function(rerender){
+	      var value = [];
+	      var suppressRerender = false;
+	      var creationMap = dataSources.get("creationMap");
+
+	      var handler = function(val){
+	        value = dataSources.keys().filter(function(val){
+	          return !utils.isCoreDataSource(val);
+	        });
+	        if(!suppressRerender){
+	          setTimeout(function(){rerender();},0);
+	        }
+	      };
+
+	      dataSources.on("change", handler);
+	      dataSources.once("subscribed", handler);
+	      dataSources.emit("subscribe");
+
+	      return {
+	        render : function(){
+	          var sourceSelect = $("<select></select>");
+	          var out = $("<textarea></textarea>");
+
+	          value.map(function(key){
+	            sourceSelect
+	              .append($("<option></option>")
+	              .attr("value",key)
+	              .text(key));
+	          });
+
+	          var createButton = $("<input type='button' value='Create'></input>")
+	            .click(function(){
+	              var source = sourceSelect.val();
+
+	              if(source){
+	                var path = creationMap.creationPath(source);
+	                console.log(JSON.stringify(path));
+	                out.val(JSON.stringify(path));
+	              }
+	            });
+
+	          return $("<span></span>")
+	            .append($("<h3>Creation Path Maker</h3>"))
+	            .append($("<div></div>").append($("<span>Source: </span>")).append(sourceSelect))
+	            .append($("<div></div>").append(createButton))
+	            .append($("<div></div>").append(out));
+
+	        }, unload: function(){
+	          suppressRerender = true;
+	          dataSources.removeListener("change", handler);
+	        }
+	      };
+	    }
+	  };
+
+	  dataSources.get("contentTypes").set("creation-path-maker", contentFactory);
 	}
 
 

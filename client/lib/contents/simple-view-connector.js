@@ -1,5 +1,6 @@
 var $ = require("jquery");
 var createSimpleDataView = require("./simple-data-view");
+var utils = require("../utils");
 
 module.exports = function(dataSources){
 
@@ -9,7 +10,7 @@ module.exports = function(dataSources){
       var suppressRerender = false;
       var handler = function(val){
         value = dataSources.keys().filter(function(val){
-          return val !== "contentTypes" && val !== "dataSources" && val !== "translations";
+          return !utils.isCoreDataSource(val);
         });
         if(!suppressRerender){
           setTimeout(function(){rerender();},0);

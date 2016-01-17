@@ -38,7 +38,7 @@ module.exports = function(){
                 headers:headers || undefined,
                 body: body || undefined
               };
-
+              dataSources.get("creationMap").set(name, null, [jqObj, interval], "http-request");
               dataSources.set(name, createHttpRequest(jqObj, interval));
               rerender();
             }

@@ -10,6 +10,10 @@ module.exports = function(key, num, dataSources, rename){
     .catch(function(error){
       return error;
     });
-
+    dataSources.get("creationMap").set(newName, key, [key, num], "index");
     dataSources.set(newName, newSource);
+}
+
+module.exports.initialize = function(dataSources){
+  dataSources.get("translations").set("index", module.exports);
 }

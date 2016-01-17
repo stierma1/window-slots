@@ -1,10 +1,12 @@
 var $ = require("jquery");
 
-module.exports = function(rootElement, initContentTypes, initDataSources, initTranslations){
+module.exports = function(rootElement, initContentTypes, initDataSources, initTranslations, initCreationMap, initDataSourceTypes){
   var windowFrame = require("./window-frame")();
   var windowFrameEditor = require("./lib/contents/window-frame-editor");
   var ContentTypes = require("./lib/data-sources/content-types");
   var Translations = require("./lib/data-sources/translations");
+  var DataSourceTypes = require("./lib/data-sources/data-source-types");
+  var CreationMap = require("./lib/data-sources/creation-map")
   var createSimpleDataView = require("./lib/contents/simple-data-view");
   var createHttpRequest = require("./lib/data-sources/http-request");
   var DataSources = require("./lib/data-sources/data-sources");
@@ -14,12 +16,19 @@ module.exports = function(rootElement, initContentTypes, initDataSources, initTr
   var contents = new ContentTypes(initContentTypes);
   var dataSources = new DataSources(initDataSources);
   var translations = new Translations(initTranslations);
+  var createMap = new CreationMap(initCreationMap);
+  var dataSourceTypes = new DataSourceTypes(initDataSourceTypes);
+
+  dataSourceTypes.set("http-request", require("./lib/data-sources/http-request"));
+  dataSources.set("creationMap", createMap);
+  dataSources.set("dataSourceTypes", dataSourceTypes);
   dataSources.set("contentTypes", contents);
   dataSources.set("translations", translations);
-  dataSources.get("translations").set("jsonpath", require("./lib/translations/jsonpath"));
-  dataSources.get("translations").set("index", require("./lib/translations/index"));
-  dataSources.get("translations").set("zip", require("./lib/translations/zip"));
-  dataSources.get("translations").set("flatten", require("./lib/translations/flatten"));
+
+  require("./lib/translations/jsonpath").initialize(dataSources);
+  require("./lib/translations/index").initialize(dataSources);
+  require("./lib/translations/zip").initialize(dataSources);
+  require("./lib/translations/flatten").initialize(dataSources);
   require("./lib/contents/jsonpath-translation")(dataSources);
   require("./lib/contents/index-translation")(dataSources);
   require("./lib/contents/zip-translation")(dataSources);
@@ -34,7 +43,21 @@ module.exports = function(rootElement, initContentTypes, initDataSources, initTr
   funcs.createHttpRequest = createHttpRequest;
   funcs.createSimpleDataView = createSimpleDataView;
   funcs.dataSources = dataSources;
-
+  funcs.buildCreationPath = require("./lib/build-creation-path");
+  require("./lib/contents/creation-path-maker")(dataSources);
   dataSources.get("contentTypes").set("http-request-generator", httpRequestGenerator());
+  funcs.utils = require("./lib/utils");
   return funcs;
 }
+
+/*
+$(function(){
+  var funcs = module.exports($("body"));
+  funcs.createWindowSlot();
+  funcs.loadContent("window-frame-editor", 1);
+
+  var t = '[{"key":"b","from":"t-zip-t","args":["t-zip-t",0],"type":"index"},{"key":"t-zip-t","from":["t","t"],"args":["t","t"],"type":"zip"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"}]'
+  var s = JSON.parse(t);
+
+  funcs.buildCreationPath(s, funcs.dataSources)
+})*/

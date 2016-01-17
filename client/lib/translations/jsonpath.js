@@ -11,6 +11,10 @@ module.exports = function(key, path, dataSources, rename){
     .catch(function(error){
       return error;
     });
-
+    dataSources.get("creationMap").set(newName, key, [key, path], "jsonpath");
     dataSources.set(newName, newSource);
+}
+
+module.exports.initialize = function(dataSources){
+  dataSources.get("translations").set("jsonpath", module.exports);
 }

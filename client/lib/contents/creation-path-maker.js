@@ -1,12 +1,13 @@
 var $ = require("jquery");
-var utils = require("../utils")
+var utils = require("../utils");
+
 module.exports = function(dataSources){
 
   var contentFactory = {
     load : function(rerender){
       var value = [];
       var suppressRerender = false;
-      var flattenTrans = dataSources.get("translations").get("flatten");
+      var creationMap = dataSources.get("creationMap");
 
       var handler = function(val){
         value = dataSources.keys().filter(function(val){
@@ -24,6 +25,7 @@ module.exports = function(dataSources){
       return {
         render : function(){
           var sourceSelect = $("<select></select>");
+          var out = $("<textarea></textarea>");
 
           value.map(function(key){
             sourceSelect
@@ -32,22 +34,22 @@ module.exports = function(dataSources){
               .text(key));
           });
 
-          var renameField = $("<input type='text'></input>")
-
           var createButton = $("<input type='button' value='Create'></input>")
             .click(function(){
               var source = sourceSelect.val();
-              var name = renameField.val();
 
               if(source){
-                flattenTrans(source, dataSources, name);
+                var path = creationMap.creationPath(source);
+                console.log(JSON.stringify(path));
+                out.val(JSON.stringify(path));
               }
             });
 
           return $("<span></span>")
+            .append($("<h3>Creation Path Maker</h3>"))
             .append($("<div></div>").append($("<span>Source: </span>")).append(sourceSelect))
-            .append($("<div></div>").append($("<span>Name: </span>")).append(renameField))
-            .append(createButton);
+            .append($("<div></div>").append(createButton))
+            .append($("<div></div>").append(out));
 
         }, unload: function(){
           suppressRerender = true;
@@ -57,5 +59,5 @@ module.exports = function(dataSources){
     }
   };
 
-  dataSources.get("contentTypes").set("flatten-translation", contentFactory);
+  dataSources.get("contentTypes").set("creation-path-maker", contentFactory);
 }
