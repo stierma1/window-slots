@@ -75,10 +75,14 @@
 	  __webpack_require__(97).initialize(dataSources);
 	  __webpack_require__(98).initialize(dataSources);
 	  __webpack_require__(99).initialize(dataSources);
-	  __webpack_require__(100)(dataSources);
-	  __webpack_require__(101)(dataSources);
+	  __webpack_require__(100).initialize(dataSources);
+	  __webpack_require__(101).initialize(dataSources);
 	  __webpack_require__(102)(dataSources);
 	  __webpack_require__(103)(dataSources);
+	  __webpack_require__(104)(dataSources);
+	  __webpack_require__(105)(dataSources);
+	  __webpack_require__(106)(dataSources);
+	  __webpack_require__(107)(dataSources);
 
 	  var funcs = windowFrameEditor(rootElement, windowFrame, dataSources);
 
@@ -89,23 +93,24 @@
 	  funcs.createHttpRequest = createHttpRequest;
 	  funcs.createSimpleDataView = createSimpleDataView;
 	  funcs.dataSources = dataSources;
-	  funcs.buildCreationPath = __webpack_require__(104);
-	  __webpack_require__(105)(dataSources);
+	  funcs.buildCreationPath = __webpack_require__(108);
+	  __webpack_require__(109)(dataSources);
 	  dataSources.get("contentTypes").set("http-request-generator", httpRequestGenerator());
 	  funcs.utils = __webpack_require__(92);
 	  return funcs;
 	}
 
-	$(function(){
+
+	/*$(function(){
 	  var funcs = module.exports($("body"));
 	  funcs.createWindowSlot();
 	  funcs.loadContent("window-frame-editor", 1);
 
-	  var t = '[{"key":"b","from":"t-zip-t","args":["t-zip-t",0],"type":"index"},{"key":"t-zip-t","from":["t","t"],"args":["t","t"],"type":"zip"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"}]'
+	  var t = '[{"key":"hello-merge-world","from":["hello","world"],"args":["hello","world"],"type":"merge"},{"key":"hello","from":"b","args":["b","Hello"],"type":"label"},{"key":"b","from":"t-zip-t","args":["t-zip-t",0],"type":"index"},{"key":"t-zip-t","from":["t","t"],"args":["t","t"],"type":"zip"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"},{"key":"world","from":"t-zip-t","args":["t-zip-t","world"],"type":"label"},{"key":"t-zip-t","from":["t","t"],"args":["t","t"],"type":"zip"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"}]'
 	  var s = JSON.parse(t);
 
 	  funcs.buildCreationPath(s, funcs.dataSources)
-	})
+	})*/
 
 
 /***/ },
@@ -39287,6 +39292,71 @@
 /* 100 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var Rx = __webpack_require__(87);
+
+	module.exports = function(key1, key2, dataSources, rename){
+	    var dataSource1 = dataSources.get(key1);
+	    var dataSource2 = dataSources.get(key2);
+
+	    var newName = rename ? rename : key1 + "-merge-" + key2;
+	    var newSource = Rx.Observable.zip(dataSource1, dataSource2)
+	      .map(function(val){
+
+	        if(!(val[0] instanceof Object)){
+	          throw new Error(newName + " received a non object from DataSource: " + key1);
+	        }
+	        if(!(val[1] instanceof Object)){
+	          throw new Error(newName + " received a non object from DataSource: " + key2);
+	        }
+	        var obj = {};
+	        for(var i in val[0]){
+	          obj[i] = val[0][i];
+	        }
+
+	        for(var i in val[1]){
+	          obj[i] = val[1][i];
+	        }
+
+	        return obj;
+	      });
+	    dataSources.get("creationMap").set(newName, [key1, key2], [key1, key2], "merge");
+	    dataSources.set(newName, newSource);
+	}
+
+	module.exports.initialize = function(dataSources){
+	  dataSources.get("translations").set("merge", module.exports);
+	}
+
+
+/***/ },
+/* 101 */
+/***/ function(module, exports) {
+
+	
+
+	module.exports = function(key, label, dataSources, rename){
+	    var dataSource = dataSources.get(key);
+	    var newName = rename ? rename : key + "Label";
+
+	    var newSource = dataSource.map(function(val){
+	      var obj = {};
+	      obj[label] = val;
+	      return obj;
+	    });
+
+	    dataSources.get("creationMap").set(newName, key, [key, label], "label");
+	    dataSources.set(newName, newSource);
+	}
+
+	module.exports.initialize = function(dataSources){
+	  dataSources.get("translations").set("label", module.exports);
+	}
+
+
+/***/ },
+/* 102 */
+/***/ function(module, exports, __webpack_require__) {
+
 	var $ = __webpack_require__(1);
 	var utils = __webpack_require__(92);
 
@@ -39355,7 +39425,7 @@
 
 
 /***/ },
-/* 101 */
+/* 103 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39426,7 +39496,7 @@
 
 
 /***/ },
-/* 102 */
+/* 104 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39501,7 +39571,7 @@
 
 
 /***/ },
-/* 103 */
+/* 105 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39568,7 +39638,155 @@
 
 
 /***/ },
-/* 104 */
+/* 106 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(1);
+	var utils = __webpack_require__(92);
+
+	module.exports = function(dataSources){
+
+	  var contentFactory = {
+	    load : function(rerender){
+	      var value = [];
+	      var suppressRerender = false;
+	      var merge = dataSources.get("translations").get("merge");
+
+	      var handler = function(val){
+	        value = dataSources.keys().filter(function(val){
+	          return !utils.isCoreDataSource(val);
+	        });
+	        if(!suppressRerender){
+	          setTimeout(function(){rerender();},0);
+	        }
+	      };
+
+	      dataSources.on("change", handler);
+	      dataSources.once("subscribed", handler);
+	      dataSources.emit("subscribe");
+
+	      return {
+	        render : function(){
+	          var source1Select = $("<select></select>");
+	          var source2Select = $("<select></select>");
+
+	          value.map(function(key){
+	            source1Select
+	              .append($("<option></option>")
+	              .attr("value",key)
+	              .text(key));
+
+	            source2Select
+	              .append($("<option></option>")
+	              .attr("value",key)
+	              .text(key));
+	          });
+
+	          var renameField = $("<input type='text'></input>")
+
+	          var createButton = $("<input type='button' value='Create'></input>")
+	            .click(function(){
+	              var source1 = source1Select.val();
+	              var source2 = source2Select.val();
+	              var name = renameField.val();
+
+	              if(source1 && source2){
+	                merge(source1, source2, dataSources, name);
+	              }
+	            });
+
+	          return $("<span></span>")
+	            .append($("<h3>Merge Translation</h3>"))
+	            .append($("<div></div>").append($("<span>Source1: </span>")).append(source1Select).append($("<span>Source2: </span>")).append(source2Select))
+	            .append($("<div></div>").append($("<span>Name: </span>")).append(renameField))
+	            .append(createButton);
+
+	        }, unload: function(){
+	          suppressRerender = true;
+	          dataSources.removeListener("change", handler);
+	        }
+	      };
+	    }
+	  };
+
+	  dataSources.get("contentTypes").set("merge-translation", contentFactory);
+	}
+
+
+/***/ },
+/* 107 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(1);
+	var utils = __webpack_require__(92);
+
+	module.exports = function(dataSources){
+
+	  var contentFactory = {
+	    load : function(rerender){
+	      var value = [];
+	      var suppressRerender = false;
+	      var label = dataSources.get("translations").get("label");
+
+	      var handler = function(val){
+	        value = dataSources.keys().filter(function(val){
+	          return !utils.isCoreDataSource(val);
+	        });
+	        if(!suppressRerender){
+	          setTimeout(function(){rerender();},0);
+	        }
+	      };
+
+	      dataSources.on("change", handler);
+	      dataSources.once("subscribed", handler);
+	      dataSources.emit("subscribe");
+
+	      return {
+	        render : function(){
+	          var sourceSelect = $("<select></select>");
+
+	          value.map(function(key){
+	            sourceSelect
+	              .append($("<option></option>")
+	              .attr("value",key)
+	              .text(key));
+	          });
+
+	          var labelField = $("<input type='text'></input>");
+	          var renameField = $("<input type='text'></input>")
+
+	          var createButton = $("<input type='button' value='Create'></input>")
+	            .click(function(){
+	              var source = sourceSelect.val();
+	              var labelF = labelField.val();
+	              var name = renameField.val();
+
+	              if(source && labelF){
+	                label(source, labelF, dataSources, name);
+	              }
+	            });
+
+	          return $("<span></span>")
+	            .append($("<h3>Label Translation</h3>"))
+	            .append($("<div></div>").append($("<span>Source: </span>")).append(sourceSelect))
+	            .append($("<div></div>").append($("<span>Label: </span>")).append(labelField))
+	            .append($("<div></div>").append($("<span>Name: </span>")).append(renameField))
+	            .append(createButton);
+
+	        }, unload: function(){
+	          suppressRerender = true;
+	          dataSources.removeListener("change", handler);
+	        }
+	      };
+	    }
+	  };
+
+	  dataSources.get("contentTypes").set("label-translation", contentFactory);
+	}
+
+
+/***/ },
+/* 108 */
 /***/ function(module, exports) {
 
 	module.exports = function(path, dataSources){
@@ -39598,7 +39816,7 @@
 
 
 /***/ },
-/* 105 */
+/* 109 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);

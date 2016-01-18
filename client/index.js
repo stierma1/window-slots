@@ -29,10 +29,14 @@ module.exports = function(rootElement, initContentTypes, initDataSources, initTr
   require("./lib/translations/index").initialize(dataSources);
   require("./lib/translations/zip").initialize(dataSources);
   require("./lib/translations/flatten").initialize(dataSources);
+  require("./lib/translations/merge").initialize(dataSources);
+  require("./lib/translations/label").initialize(dataSources);
   require("./lib/contents/jsonpath-translation")(dataSources);
   require("./lib/contents/index-translation")(dataSources);
   require("./lib/contents/zip-translation")(dataSources);
   require("./lib/contents/flatten-translation")(dataSources);
+  require("./lib/contents/merge-translation")(dataSources);
+  require("./lib/contents/label-translation")(dataSources);
 
   var funcs = windowFrameEditor(rootElement, windowFrame, dataSources);
 
@@ -50,13 +54,13 @@ module.exports = function(rootElement, initContentTypes, initDataSources, initTr
   return funcs;
 }
 
-/*
-$(function(){
+
+/*$(function(){
   var funcs = module.exports($("body"));
   funcs.createWindowSlot();
   funcs.loadContent("window-frame-editor", 1);
 
-  var t = '[{"key":"b","from":"t-zip-t","args":["t-zip-t",0],"type":"index"},{"key":"t-zip-t","from":["t","t"],"args":["t","t"],"type":"zip"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"}]'
+  var t = '[{"key":"hello-merge-world","from":["hello","world"],"args":["hello","world"],"type":"merge"},{"key":"hello","from":"b","args":["b","Hello"],"type":"label"},{"key":"b","from":"t-zip-t","args":["t-zip-t",0],"type":"index"},{"key":"t-zip-t","from":["t","t"],"args":["t","t"],"type":"zip"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"},{"key":"world","from":"t-zip-t","args":["t-zip-t","world"],"type":"label"},{"key":"t-zip-t","from":["t","t"],"args":["t","t"],"type":"zip"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"},{"key":"t","from":null,"args":[{"url":"http://jsonplaceholder.typicode.com/posts/1","method":"GET"},null],"type":"http-request"}]'
   var s = JSON.parse(t);
 
   funcs.buildCreationPath(s, funcs.dataSources)
