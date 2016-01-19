@@ -83,6 +83,7 @@
 	  __webpack_require__(105)(dataSources);
 	  __webpack_require__(106)(dataSources);
 	  __webpack_require__(107)(dataSources);
+	  __webpack_require__(108)(dataSources);
 
 	  var funcs = windowFrameEditor(rootElement, windowFrame, dataSources);
 
@@ -93,15 +94,15 @@
 	  funcs.createHttpRequest = createHttpRequest;
 	  funcs.createSimpleDataView = createSimpleDataView;
 	  funcs.dataSources = dataSources;
-	  funcs.buildCreationPath = __webpack_require__(108);
-	  __webpack_require__(109)(dataSources);
+	  funcs.buildCreationPath = __webpack_require__(109);
+	  __webpack_require__(110)(dataSources);
 	  dataSources.get("contentTypes").set("http-request-generator", httpRequestGenerator());
 	  funcs.utils = __webpack_require__(92);
 	  return funcs;
 	}
 
 
-	/*$(function(){
+	$(function(){
 	  var funcs = module.exports($("body"));
 	  funcs.createWindowSlot();
 	  funcs.loadContent("window-frame-editor", 1);
@@ -110,7 +111,7 @@
 	  var s = JSON.parse(t);
 
 	  funcs.buildCreationPath(s, funcs.dataSources)
-	})*/
+	})
 
 
 /***/ },
@@ -39787,6 +39788,54 @@
 
 /***/ },
 /* 108 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(1);
+	var buildCreationPath = __webpack_require__(109);
+
+	module.exports = function(dataSources){
+
+	  var contentFactory = {
+	    load : function(rerender){
+
+	      return {
+	        render : function(){
+	          var inField = $("<textarea></textarea>");
+
+	          var createButton = $("<input type='button' value='Create'></input>")
+	            .click(function(){
+	              var input = inField.val();
+	              if(input){
+	                var obj = null;
+	                try{
+	                  var obj = JSON.parse(input);
+	                  buildCreationPath(obj, dataSources);
+	                  rerender();
+	                } catch(err){
+	                  console.log(err);
+	                }
+	              }
+	            });
+
+	          return $("<span></span>")
+	            .append($("<h3>Build Creation Path</h3>"))
+	            .append($("<div></div>").append(inField))
+	            .append($("<div></div>").append(createButton));
+
+	        },
+	        unload: function(){
+
+	        }
+	      };
+	    }
+	  };
+
+	  dataSources.get("contentTypes").set("build-creation-path", contentFactory);
+	}
+
+
+/***/ },
+/* 109 */
 /***/ function(module, exports) {
 
 	module.exports = function(path, dataSources){
@@ -39816,7 +39865,7 @@
 
 
 /***/ },
-/* 109 */
+/* 110 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);

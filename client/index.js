@@ -37,6 +37,7 @@ module.exports = function(rootElement, initContentTypes, initDataSources, initTr
   require("./lib/contents/flatten-translation")(dataSources);
   require("./lib/contents/merge-translation")(dataSources);
   require("./lib/contents/label-translation")(dataSources);
+  require("./lib/contents/build-creation-path")(dataSources);
 
   var funcs = windowFrameEditor(rootElement, windowFrame, dataSources);
 
@@ -54,8 +55,8 @@ module.exports = function(rootElement, initContentTypes, initDataSources, initTr
   return funcs;
 }
 
-
-/*$(function(){
+/*
+$(function(){
   var funcs = module.exports($("body"));
   funcs.createWindowSlot();
   funcs.loadContent("window-frame-editor", 1);
