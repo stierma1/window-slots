@@ -1,3 +1,4 @@
+exports["window-slots"] =
 /******/ (function(modules) { // webpackBootstrap
 /******/ 	// The module cache
 /******/ 	var installedModules = {};
@@ -101,7 +102,7 @@
 	  return funcs;
 	}
 
-
+	/*
 	$(function(){
 	  var funcs = module.exports($("body"));
 	  funcs.createWindowSlot();
@@ -111,7 +112,7 @@
 	  var s = JSON.parse(t);
 
 	  funcs.buildCreationPath(s, funcs.dataSources)
-	})
+	})*/
 
 
 /***/ },
@@ -39261,7 +39262,7 @@
 	module.exports = function(key, dataSources, rename){
 	    var dataSource = dataSources.get(key);
 
-	    var newName = rename ? rename : key1 + "-zip-" + key2;
+	    var newName = rename ? rename : key + "Flatten";
 
 	    var newSource = dataSource.map(function(val){
 	      var out = [];
@@ -39276,9 +39277,6 @@
 	      }
 
 	      return out;
-	    })
-	    .catch(function(error){
-	      return error;
 	    });
 	    dataSources.get("creationMap").set(newName, key, [key], "flatten");
 	    dataSources.set(newName, newSource);
@@ -39622,6 +39620,7 @@
 	            });
 
 	          return $("<span></span>")
+	            .append($("<h3>Flatten Translation</h3>"))
 	            .append($("<div></div>").append($("<span>Source: </span>")).append(sourceSelect))
 	            .append($("<div></div>").append($("<span>Name: </span>")).append(renameField))
 	            .append(createButton);

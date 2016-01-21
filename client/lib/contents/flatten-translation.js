@@ -45,6 +45,7 @@ module.exports = function(dataSources){
             });
 
           return $("<span></span>")
+            .append($("<h3>Flatten Translation</h3>"))
             .append($("<div></div>").append($("<span>Source: </span>")).append(sourceSelect))
             .append($("<div></div>").append($("<span>Name: </span>")).append(renameField))
             .append(createButton);

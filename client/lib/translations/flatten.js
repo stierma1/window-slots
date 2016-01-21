@@ -2,7 +2,7 @@
 module.exports = function(key, dataSources, rename){
     var dataSource = dataSources.get(key);
 
-    var newName = rename ? rename : key1 + "-zip-" + key2;
+    var newName = rename ? rename : key + "Flatten";
 
     var newSource = dataSource.map(function(val){
       var out = [];
@@ -17,9 +17,6 @@ module.exports = function(key, dataSources, rename){
       }
 
       return out;
-    })
-    .catch(function(error){
-      return error;
     });
     dataSources.get("creationMap").set(newName, key, [key], "flatten");
     dataSources.set(newName, newSource);

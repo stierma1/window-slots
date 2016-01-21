@@ -2,7 +2,7 @@
   "name": "window-slots",
   "version": "1.0.10",
   "description": "",
-  "main": "client/index.js",
+  "main": "build/main.js",
   "scripts": {
     "test": "grunt test"
   },
