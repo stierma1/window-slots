@@ -7,7 +7,7 @@ module.exports = function(key, dataSources, rename){
     var newSource = dataSource.map(function(val){
       var out = [];
       for(var i = 0; i < val.length; i++){
-        if(val instanceof Array){
+        if(val[i] instanceof Array){
           for(var j = 0; j < val[i].length; j++){
             out.push(val[i][j]);
           }
