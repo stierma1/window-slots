@@ -29,7 +29,7 @@ class ContentTypes extends EE{
     for(var i in this.types){
       keys.push(i);
     }
-    return keys;
+    return keys.sort();
   }
 
 }

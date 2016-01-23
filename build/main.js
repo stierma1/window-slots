@@ -47,7 +47,7 @@ exports["window-slots"] =
 
 	var $ = __webpack_require__(1);
 
-	module.exports = function(rootElement, initContentTypes, initDataSources, initTranslations, initCreationMap, initDataSourceTypes){
+	module.exports = function init(rootElement, initContentTypes, initDataSources, initTranslations, initCreationMap, initDataSourceTypes){
 	  var windowFrame = __webpack_require__(2)();
 	  var windowFrameEditor = __webpack_require__(78);
 	  var ContentTypes = __webpack_require__(81);
@@ -78,13 +78,17 @@ exports["window-slots"] =
 	  __webpack_require__(99).initialize(dataSources);
 	  __webpack_require__(100).initialize(dataSources);
 	  __webpack_require__(101).initialize(dataSources);
-	  __webpack_require__(102)(dataSources);
-	  __webpack_require__(103)(dataSources);
+	  __webpack_require__(102).initialize(dataSources);
+	  __webpack_require__(103).initialize(dataSources);
 	  __webpack_require__(104)(dataSources);
 	  __webpack_require__(105)(dataSources);
 	  __webpack_require__(106)(dataSources);
 	  __webpack_require__(107)(dataSources);
 	  __webpack_require__(108)(dataSources);
+	  __webpack_require__(109)(dataSources);
+	  __webpack_require__(110)(dataSources);
+	  __webpack_require__(112)(dataSources);
+	  __webpack_require__(113)(dataSources);
 
 	  var funcs = windowFrameEditor(rootElement, windowFrame, dataSources);
 
@@ -95,16 +99,18 @@ exports["window-slots"] =
 	  funcs.createHttpRequest = createHttpRequest;
 	  funcs.createSimpleDataView = createSimpleDataView;
 	  funcs.dataSources = dataSources;
-	  funcs.buildCreationPath = __webpack_require__(109);
-	  __webpack_require__(110)(dataSources);
+	  funcs.buildCreationPath = __webpack_require__(111);
+	  __webpack_require__(114)(dataSources);
 	  dataSources.get("contentTypes").set("http-request-generator", httpRequestGenerator());
 	  funcs.utils = __webpack_require__(92);
 	  return funcs;
 	}
 
-	/*
-	$(function(){
+
+	/*$(function(){
 	  var funcs = module.exports($("body"));
+	  //loadContent = funcs.loadContent;
+	  //createWindowSlot = funcs.createWindowSlot;
 	  funcs.createWindowSlot();
 	  funcs.loadContent("window-frame-editor", 1);
 
@@ -25903,7 +25909,7 @@ exports["window-slots"] =
 	    for(var i in this.types){
 	      keys.push(i);
 	    }
-	    return keys;
+	    return keys.sort();
 	  }
 
 	}
@@ -26051,7 +26057,9 @@ exports["window-slots"] =
 	        });
 	        return path;
 	      } else {
-	        return this.creationPath(this.cMaps[key].from, path)
+	        if(this.cMaps[key].type !== "feedback"){
+	          return this.creationPath(this.cMaps[key].from, path);
+	        }
 	      }
 	    } else {
 	      return path;
@@ -38371,7 +38379,7 @@ exports["window-slots"] =
 	    for(var i in this.dataSources){
 	      keys.push(i);
 	    }
-	    return keys;
+	    return keys.sort();
 	  }
 
 	}
@@ -39356,6 +39364,73 @@ exports["window-slots"] =
 /* 102 */
 /***/ function(module, exports, __webpack_require__) {
 
+	var Rx = __webpack_require__(87);
+
+	module.exports = function(key, init, dataSources, rename){
+
+	    var newName = rename ? rename : key + "Feedback";
+
+	    var newSource = Rx.Observable.of(0)
+	      .flatMap(function(){
+	        var subscription = null;
+	        var source = Rx.Observable.fromEvent(dataSources.get(key).tapEmitter, "data")
+	          .map(function(val){
+	            if(val[0] === "data"){
+	              return val[1];
+	            } else if(val[0] === "error"){
+	              throw val[1];
+	            }
+	          })
+	          .takeUntil(Rx.Observable.fromEvent(dataSources.get(key).tapEmitter, "done"));
+
+	        return Rx.Observable.of(init).merge(source);
+	      });
+
+	    dataSources.get("creationMap").set(newName, key, [key,init], "feedback");
+	    dataSources.set(newName, newSource);
+	}
+
+	module.exports.initialize = function(dataSources){
+	  dataSources.get("translations").set("feedback", module.exports);
+	}
+
+
+/***/ },
+/* 103 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var Rx = __webpack_require__(87);
+	var EE = __webpack_require__(73).EventEmitter;
+
+	module.exports = function(key, dataSources, rename){
+	    var dataSource = dataSources.get(key);
+	    var newName = rename ? rename : key + "Tap";
+	    var emitter = new EE();
+
+	    var newSource = dataSource.tap(function(val){
+	      emitter.emit("data", ["data", val]);
+	    }, function(err){
+	      emitter.emit("data", ["error", err]);
+	    },function(){
+	      emitter.emit("done");
+	      emitter.removeAllListeners();
+	    });
+
+	    newSource.tapEmitter = emitter;
+
+	    dataSources.get("creationMap").set(newName, key, [key], "tap");
+	    dataSources.set(newName, newSource);
+	}
+
+	module.exports.initialize = function(dataSources){
+	  dataSources.get("translations").set("tap", module.exports);
+	}
+
+
+/***/ },
+/* 104 */
+/***/ function(module, exports, __webpack_require__) {
+
 	var $ = __webpack_require__(1);
 	var utils = __webpack_require__(92);
 
@@ -39424,7 +39499,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 103 */
+/* 105 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39495,7 +39570,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 104 */
+/* 106 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39570,7 +39645,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 105 */
+/* 107 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39638,7 +39713,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 106 */
+/* 108 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39714,7 +39789,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 107 */
+/* 109 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39786,11 +39861,11 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 108 */
+/* 110 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
-	var buildCreationPath = __webpack_require__(109);
+	var buildCreationPath = __webpack_require__(111);
 
 	module.exports = function(dataSources){
 
@@ -39834,7 +39909,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 109 */
+/* 111 */
 /***/ function(module, exports) {
 
 	module.exports = function(path, dataSources){
@@ -39864,7 +39939,136 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 110 */
+/* 112 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(1);
+	var utils = __webpack_require__(92);
+
+	module.exports = function(dataSources){
+
+	  var contentFactory = {
+	    load : function(rerender){
+	      var value = [];
+	      var suppressRerender = false;
+	      var feedbackTrans = dataSources.get("translations").get("feedback");
+
+	      return {
+	        render : function(){
+	          var sourceField = $("<input type='text'></input>");
+
+	          var initField = $("<textarea></textarea>");
+	          var numberField = $("<input type='checkbox'></input>")
+	          var renameField = $("<input type='text'></input>")
+
+	          var createButton = $("<input type='button' value='Create'></input>")
+	            .click(function(){
+	              var source = sourceField.val();
+	              var init = initField.val();
+	              var name = renameField.val();
+
+	              var checked = numberField.is(":checked")
+	              if(checked){
+	                init = parseFloat(init) || 0;
+	              }
+
+	              if(source){
+	                  feedbackTrans(source, init, dataSources, name);
+	                  rerender();
+	              }
+	            });
+
+	          return $("<span></span>")
+	            .append($("<h3>Feedback Translation: </h3>"))
+	            .append($("<p>The source must be a tap data source or else infinite subscriptions will be generated by the feedback loop</p>"))
+	            .append($("<div></div>").append($("<span>Source: </span>")).append(sourceField))
+	            .append($("<div></div>").append($("<span>Number: </span>")).append(numberField))
+	            .append($("<div></div>").append($("<span>Init: </span>")).append(initField))
+	            .append($("<div></div>").append($("<span>Name: </span>")).append(renameField))
+	            .append(createButton);
+
+	        }, unload: function(){
+	          suppressRerender = true;
+	        }
+	      };
+	    }
+	  };
+
+	  dataSources.get("contentTypes").set("feedback-translation", contentFactory);
+	}
+
+
+/***/ },
+/* 113 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(1);
+	var utils = __webpack_require__(92);
+
+	module.exports = function(dataSources){
+
+	  var contentFactory = {
+	    load : function(rerender){
+	      var value = [];
+	      var suppressRerender = false;
+	      var tapTrans = dataSources.get("translations").get("tap");
+
+	      var handler = function(val){
+	        value = dataSources.keys().filter(function(val){
+	          return !utils.isCoreDataSource(val);
+	        });
+	        if(!suppressRerender){
+	          setTimeout(function(){rerender();},0);
+	        }
+	      };
+
+	      dataSources.on("change", handler);
+	      dataSources.once("subscribed", handler);
+	      dataSources.emit("subscribe");
+
+	      return {
+	        render : function(){
+	          var sourceSelect = $("<select></select>");
+
+	          value.map(function(key){
+	            sourceSelect
+	              .append($("<option></option>")
+	              .attr("value",key)
+	              .text(key));
+	          });
+
+	          var renameField = $("<input type='text'></input>")
+
+	          var createButton = $("<input type='button' value='Create'></input>")
+	            .click(function(){
+	              var source = sourceSelect.val();;
+	              var name = renameField.val();
+
+	              if(source){
+	                tapTrans(source, dataSources, name);
+	              }
+	            });
+
+	          return $("<span></span>")
+	            .append($("<h3>Tap Translation</h3>"))
+	            .append($("<div></div>").append($("<span>Source: </span>")).append(sourceSelect))
+	            .append($("<div></div>").append($("<span>Name: </span>")).append(renameField))
+	            .append(createButton);
+
+	        }, unload: function(){
+	          suppressRerender = true;
+	          dataSources.removeListener("change", handler);
+	        }
+	      };
+	    }
+	  };
+
+	  dataSources.get("contentTypes").set("tap-translation", contentFactory);
+	}
+
+
+/***/ },
+/* 114 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);

@@ -1,6 +1,6 @@
 var $ = require("jquery");
 
-module.exports = function(rootElement, initContentTypes, initDataSources, initTranslations, initCreationMap, initDataSourceTypes){
+module.exports = function init(rootElement, initContentTypes, initDataSources, initTranslations, initCreationMap, initDataSourceTypes){
   var windowFrame = require("./window-frame")();
   var windowFrameEditor = require("./lib/contents/window-frame-editor");
   var ContentTypes = require("./lib/data-sources/content-types");
@@ -31,6 +31,8 @@ module.exports = function(rootElement, initContentTypes, initDataSources, initTr
   require("./lib/translations/flatten").initialize(dataSources);
   require("./lib/translations/merge").initialize(dataSources);
   require("./lib/translations/label").initialize(dataSources);
+  require("./lib/translations/feedback").initialize(dataSources);
+  require("./lib/translations/tap").initialize(dataSources);
   require("./lib/contents/jsonpath-translation")(dataSources);
   require("./lib/contents/index-translation")(dataSources);
   require("./lib/contents/zip-translation")(dataSources);
@@ -38,6 +40,8 @@ module.exports = function(rootElement, initContentTypes, initDataSources, initTr
   require("./lib/contents/merge-translation")(dataSources);
   require("./lib/contents/label-translation")(dataSources);
   require("./lib/contents/build-creation-path")(dataSources);
+  require("./lib/contents/feedback-translation")(dataSources);
+  require("./lib/contents/tap-translation")(dataSources);
 
   var funcs = windowFrameEditor(rootElement, windowFrame, dataSources);
 
@@ -55,9 +59,11 @@ module.exports = function(rootElement, initContentTypes, initDataSources, initTr
   return funcs;
 }
 
-/*
-$(function(){
+
+/*$(function(){
   var funcs = module.exports($("body"));
+  //loadContent = funcs.loadContent;
+  //createWindowSlot = funcs.createWindowSlot;
   funcs.createWindowSlot();
   funcs.loadContent("window-frame-editor", 1);
 

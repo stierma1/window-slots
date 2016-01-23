@@ -45,7 +45,9 @@ class CreationMap extends EE{
         });
         return path;
       } else {
-        return this.creationPath(this.cMaps[key].from, path)
+        if(this.cMaps[key].type !== "feedback"){
+          return this.creationPath(this.cMaps[key].from, path);
+        }
       }
     } else {
       return path;

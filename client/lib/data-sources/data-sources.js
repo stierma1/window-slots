@@ -32,7 +32,7 @@ class DataSources extends EE{
     for(var i in this.dataSources){
       keys.push(i);
     }
-    return keys;
+    return keys.sort();
   }
 
 }
