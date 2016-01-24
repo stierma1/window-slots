@@ -67,28 +67,29 @@ exports["window-slots"] =
 	  var dataSourceTypes = new DataSourceTypes(initDataSourceTypes);
 
 	  dataSourceTypes.set("http-request", __webpack_require__(86));
+	  dataSourceTypes.set("data", __webpack_require__(93));
 	  dataSources.set("creationMap", createMap);
 	  dataSources.set("dataSourceTypes", dataSourceTypes);
 	  dataSources.set("contentTypes", contents);
 	  dataSources.set("translations", translations);
 
-	  __webpack_require__(93).initialize(dataSources);
-	  __webpack_require__(97).initialize(dataSources);
+	  __webpack_require__(94).initialize(dataSources);
 	  __webpack_require__(98).initialize(dataSources);
 	  __webpack_require__(99).initialize(dataSources);
 	  __webpack_require__(100).initialize(dataSources);
 	  __webpack_require__(101).initialize(dataSources);
 	  __webpack_require__(102).initialize(dataSources);
 	  __webpack_require__(103).initialize(dataSources);
-	  __webpack_require__(104)(dataSources);
+	  __webpack_require__(104).initialize(dataSources);
 	  __webpack_require__(105)(dataSources);
 	  __webpack_require__(106)(dataSources);
 	  __webpack_require__(107)(dataSources);
 	  __webpack_require__(108)(dataSources);
 	  __webpack_require__(109)(dataSources);
 	  __webpack_require__(110)(dataSources);
-	  __webpack_require__(112)(dataSources);
+	  __webpack_require__(111)(dataSources);
 	  __webpack_require__(113)(dataSources);
+	  __webpack_require__(114)(dataSources);
 
 	  var funcs = windowFrameEditor(rootElement, windowFrame, dataSources);
 
@@ -99,15 +100,21 @@ exports["window-slots"] =
 	  funcs.createHttpRequest = createHttpRequest;
 	  funcs.createSimpleDataView = createSimpleDataView;
 	  funcs.dataSources = dataSources;
-	  funcs.buildCreationPath = __webpack_require__(111);
-	  __webpack_require__(114)(dataSources);
+	  funcs.buildCreationPath = __webpack_require__(112);
+	  __webpack_require__(115)(dataSources);
 	  dataSources.get("contentTypes").set("http-request-generator", httpRequestGenerator());
+	  dataSources.get("contentTypes").set("data-generator", __webpack_require__(116)());
+
 	  funcs.utils = __webpack_require__(92);
 	  return funcs;
 	}
 
+	module.exports.server = function(dataSources){
+	  dataSources.get("dataSourceTypes").set("http-request", __webpack_require__(117));
+	}
 
-	/*$(function(){
+	/*
+	$(function(){
 	  var funcs = module.exports($("body"));
 	  //loadContent = funcs.loadContent;
 	  //createWindowSlot = funcs.createWindowSlot;
@@ -26059,6 +26066,8 @@ exports["window-slots"] =
 	      } else {
 	        if(this.cMaps[key].type !== "feedback"){
 	          return this.creationPath(this.cMaps[key].from, path);
+	        } else {
+	          return path;
 	        }
 	      }
 	    } else {
@@ -38569,8 +38578,30 @@ exports["window-slots"] =
 /* 93 */
 /***/ function(module, exports, __webpack_require__) {
 
+	"use strict"
+
+	var RX = __webpack_require__(87);
+
+	module.exports = function(mockObj, interval){
+	  var source = Rx.Observable.of(mockObj);
+
+	  if(interval){
+	    source = source.merge(RX.Observable.interval(interval))
+	      .map(function(){
+	        return mockObj;
+	      });
+	  }
+
+	  return source;
+	};
+
+
+/***/ },
+/* 94 */
+/***/ function(module, exports, __webpack_require__) {
+
 	
-	var JSONPath = __webpack_require__(94);
+	var JSONPath = __webpack_require__(95);
 
 	module.exports = function(key, path, dataSources, rename){
 	    var dataSource = dataSources.get(key);
@@ -38592,7 +38623,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 94 */
+/* 95 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var __WEBPACK_AMD_DEFINE_RESULT__;var require;/*global exports, require*/
@@ -38613,7 +38644,7 @@ exports["window-slots"] =
 	var allowedResultTypes = ['value', 'path', 'pointer', 'parent', 'parentProperty', 'all'];
 
 	var vm = isNode
-	    ? __webpack_require__(95) : {
+	    ? __webpack_require__(96) : {
 	        runInNewContext: function (expr, context) {
 	            return eval(Object.keys(context).reduce(function (s, vr) {
 	                return 'var ' + vr + '=' + JSON.stringify(context[vr]).replace(/\u2028|\u2029/g, function (m) {
@@ -39057,10 +39088,10 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 95 */
+/* 96 */
 /***/ function(module, exports, __webpack_require__) {
 
-	var indexOf = __webpack_require__(96);
+	var indexOf = __webpack_require__(97);
 
 	var Object_keys = function (obj) {
 	    if (Object.keys) return Object.keys(obj)
@@ -39201,7 +39232,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 96 */
+/* 97 */
 /***/ function(module, exports) {
 
 	
@@ -39216,7 +39247,7 @@ exports["window-slots"] =
 	};
 
 /***/ },
-/* 97 */
+/* 98 */
 /***/ function(module, exports) {
 
 	
@@ -39241,7 +39272,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 98 */
+/* 99 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Rx = __webpack_require__(87);
@@ -39263,7 +39294,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 99 */
+/* 100 */
 /***/ function(module, exports) {
 
 	
@@ -39296,7 +39327,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 100 */
+/* 101 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Rx = __webpack_require__(87);
@@ -39336,7 +39367,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 101 */
+/* 102 */
 /***/ function(module, exports) {
 
 	
@@ -39361,7 +39392,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 102 */
+/* 103 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Rx = __webpack_require__(87);
@@ -39396,7 +39427,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 103 */
+/* 104 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var Rx = __webpack_require__(87);
@@ -39428,7 +39459,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 104 */
+/* 105 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39499,7 +39530,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 105 */
+/* 106 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39570,7 +39601,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 106 */
+/* 107 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39645,7 +39676,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 107 */
+/* 108 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39713,7 +39744,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 108 */
+/* 109 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39789,7 +39820,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 109 */
+/* 110 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39861,11 +39892,11 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 110 */
+/* 111 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
-	var buildCreationPath = __webpack_require__(111);
+	var buildCreationPath = __webpack_require__(112);
 
 	module.exports = function(dataSources){
 
@@ -39909,7 +39940,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 111 */
+/* 112 */
 /***/ function(module, exports) {
 
 	module.exports = function(path, dataSources){
@@ -39939,7 +39970,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 112 */
+/* 113 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -39999,7 +40030,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 113 */
+/* 114 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -40068,7 +40099,7 @@ exports["window-slots"] =
 
 
 /***/ },
-/* 114 */
+/* 115 */
 /***/ function(module, exports, __webpack_require__) {
 
 	var $ = __webpack_require__(1);
@@ -40135,6 +40166,95 @@ exports["window-slots"] =
 	  dataSources.get("contentTypes").set("creation-path-maker", contentFactory);
 	}
 
+
+/***/ },
+/* 116 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var $ = __webpack_require__(1);
+	var createHttpRequest = __webpack_require__(93);
+	var uuid = __webpack_require__(79);
+
+	module.exports = function(){
+
+	  var contentFactory = {
+	    load : function(rerender, dataSources){
+
+	      return {
+	        render : function(){
+	          var nameUuid = uuid.v4();
+	          var nameField = $("<input type='text'></input>").attr("id", nameUuid);
+	          var intervalUuid = uuid.v4();
+	          var intervalField = $("<input type='text'></input>").attr("id", intervalUuid);
+	          var bodyUuid = uuid.v4();
+	          var bodyField = $("<textarea></textarea>").attr("id", bodyUuid);
+
+	          var submit = $("<input type='button' value='Create'></input>");
+
+	          submit.click(function(){
+	            var name = $("#" + nameUuid).val();
+	            var interval = parseInt($("#" + intervalUuid).val());
+	            var body = JSON.parse($("#" + bodyUuid).val() || "\"\"");
+
+	            if(name){
+	              var jqObj = body;
+	              dataSources.get("creationMap").set(name, null, [jqObj, interval], "data");
+	              dataSources.set(name, createHttpRequest(jqObj, interval));
+	              rerender();
+	            }
+	          });
+
+	          return $("<span></span>")
+	            .append("<h3>Data Generator</h3>")
+	            .append($("<div></div>").append($("<span>Name: </span>")).append(nameField))
+	            .append($("<div></div>").append($("<span>Interval: </span>")).append(intervalField))
+	            .append($("<div></div>").append($("<span>Data: </span>")).append(bodyField))
+	            .append($("<div></div>").append(submit));
+	        }, unload: function(){
+
+	        }
+	      };
+	    }
+	  };
+
+	  return contentFactory;
+	}
+
+
+/***/ },
+/* 117 */
+/***/ function(module, exports, __webpack_require__) {
+
+	var request = __webpack_require__(118);
+	var RX = __webpack_require__(87);
+
+	module.exports = function(obj, interval){
+	  var interval = RX.Observable.interval(interval || 5000);
+	  var subject = new RX.BehaviorSubject(1);
+	  var req = RX.Observable.fromCallback(request);
+
+	  return RX.Observable.merge(subject, interval)
+	  .map(function(){
+	    return req(obj)
+	  })
+	  .flatMap(function(obs){
+	    return obs.catch(function(error){
+	      return Rx.Observable.return(error);
+	    });
+	  })
+	  .map(function(val){
+	    return val[2];
+	  })
+	  .publish()
+	  .refCount();
+	}
+
+
+/***/ },
+/* 118 */
+/***/ function(module, exports) {
+
+	module.exports = require("request");
 
 /***/ }
 /******/ ]);

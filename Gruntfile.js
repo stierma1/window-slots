@@ -48,6 +48,7 @@ module.exports = function(grunt) {
           libraryTarget: "commonjs",
           library: "window-slots"
 	      },
+        externals: ["request"],
 
 	      stats: {
 		      colors: false,

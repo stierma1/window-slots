@@ -20,6 +20,7 @@ module.exports = function init(rootElement, initContentTypes, initDataSources, i
   var dataSourceTypes = new DataSourceTypes(initDataSourceTypes);
 
   dataSourceTypes.set("http-request", require("./lib/data-sources/http-request"));
+  dataSourceTypes.set("data", require("./lib/data-sources/data"));
   dataSources.set("creationMap", createMap);
   dataSources.set("dataSourceTypes", dataSourceTypes);
   dataSources.set("contentTypes", contents);
@@ -55,12 +56,18 @@ module.exports = function init(rootElement, initContentTypes, initDataSources, i
   funcs.buildCreationPath = require("./lib/build-creation-path");
   require("./lib/contents/creation-path-maker")(dataSources);
   dataSources.get("contentTypes").set("http-request-generator", httpRequestGenerator());
+  dataSources.get("contentTypes").set("data-generator", require("./lib/contents/data-generator")());
+
   funcs.utils = require("./lib/utils");
   return funcs;
 }
 
+module.exports.server = function(dataSources){
+  dataSources.get("dataSourceTypes").set("http-request", require("../lib/data-sources/http-request"));
+}
 
-/*$(function(){
+/*
+$(function(){
   var funcs = module.exports($("body"));
   //loadContent = funcs.loadContent;
   //createWindowSlot = funcs.createWindowSlot;
