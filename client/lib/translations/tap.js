@@ -13,7 +13,7 @@ module.exports = function(key, dataSources, rename){
     },function(){
       emitter.emit("done");
       emitter.removeAllListeners();
-    });
+    }).publish().refCount();
 
     newSource.tapEmitter = emitter;
 
